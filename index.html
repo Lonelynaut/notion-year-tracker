@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Year Progress Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #ffffff;
+            padding: 16px;
+            color: #37352f;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+
+        .header {
+            margin-bottom: 20px;
+            padding-left: 16px;
+        }
+
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        .progress-text {
+            font-size: 14px;
+            color: #787774;
+        }
+
+        .settings-toggle {
+            background: none;
+            border: 1px solid #e9e9e7;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #787774;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .settings-toggle:hover {
+            background: #f7f6f3;
+        }
+
+        .settings-panel {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border: 1px solid #e9e9e7;
+            border-radius: 8px;
+            padding: 16px;
+            display: none !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .settings-panel.open {
+            display: block !important;
+        }
+
+        .settings-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .setting-group {
+            margin-bottom: 12px;
+        }
+
+        .setting-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #37352f;
+            margin-bottom: 6px;
+        }
+
+        .color-input {
+            width: 40px;
+            height: 30px;
+            border: 1px solid #e9e9e7;
+            border-radius: 4px;
+            cursor: pointer;
+            background: none;
+        }
+
+        .tracker-container {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+        }
+
+        .year-grid {
+            display: grid;
+            grid-template-columns: repeat(53, 1fr);
+            gap: 3px;
+            min-width: 700px;
+            width: 100%;
+        }
+
+        .day-square {
+            aspect-ratio: 1;
+            min-width: 12px;
+            border-radius: 2px;
+            border: 1px solid #e1e4e8;
+            background: white;
+            position: relative;
+            transition: all 0.1s ease;
+        }
+
+        .day-square:hover {
+            border-color: rgba(27, 31, 35, 0.15);
+        }
+
+        .day-square.filled {
+            background: #40c463;
+            border-color: rgba(27, 31, 35, 0.15);
+        }
+
+        .legend {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            margin-top: 12px;
+            font-size: 11px;
+            color: #656d76;
+        }
+
+        .legend-text {
+            margin-right: 8px;
+        }
+
+        .legend-squares {
+            display: flex;
+            gap: 2px;
+        }
+
+        .legend-square {
+            width: 10px;
+            height: 10px;
+            border-radius: 1px;
+        }
+
+        .month-labels {
+            display: grid;
+            grid-template-columns: repeat(53, 1fr);
+            gap: 3px;
+            margin-bottom: 8px;
+            min-width: 700px;
+        }
+
+        .month-label {
+            font-size: 10px;
+            color: #656d76;
+            text-align: center;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 16px;
+            font-size: 12px;
+            color: #656d76;
+            padding-left: 16px;
+            padding-right: 16px;
+        }
+
+        .stats-left {
+            display: flex;
+            gap: 24px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #37352f;
+        }
+
+        @media (max-width: 768px) {
+            .stats {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 16px;
+            }
+            
+            .stats-left {
+                flex-wrap: wrap;
+                gap: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">2025</h1>
+        </div>
+
+        <div class="tracker-container">
+            <div class="year-grid" id="yearGrid"></div>
+        </div>
+
+        <div class="stats">
+            <div class="stats-left">
+                <div class="stat">
+                    <span class="stat-number" id="daysPassed">0</span>
+                    <span>Days Passed</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="daysRemaining">0</span>
+                    <span>Days Remaining</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number" id="percentComplete">0%</span>
+                    <span>Complete</span>
+                </div>
+            </div>
+            <div class="settings-container">
+                <button class="settings-toggle" onclick="toggleSettings()">⚙️ Customize</button>
+                <div class="settings-panel" id="settingsPanel">
+                    <div class="setting-group">
+                        <label class="setting-label" for="filledColor">Filled Color:</label>
+                        <input type="color" id="filledColor" class="color-input" value="#40c463" onchange="updateColors()">
+                    </div>
+                    <div class="setting-group">
+                        <label class="setting-label" for="emptyColor">Border Color:</label>
+                        <input type="color" id="emptyColor" class="color-input" value="#e1e4e8" onchange="updateColors()">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSettings() {
+            console.log('Toggle clicked'); // Debug log
+            const panel = document.getElementById('settingsPanel');
+            console.log('Panel found:', panel); // Debug log
+            panel.classList.toggle('open');
+            console.log('Panel classes:', panel.className); // Debug log
+        }
+
+        // Close settings panel when clicking outside
+        document.addEventListener('click', function(event) {
+            const settingsContainer = document.querySelector('.settings-container');
+            const panel = document.getElementById('settingsPanel');
+            const settingsButton = document.querySelector('.settings-toggle');
+            
+            if (!settingsContainer.contains(event.target)) {
+                panel.classList.remove('open');
+            }
+        });
+
+        // Prevent the click outside handler from interfering with the toggle
+        document.querySelector('.settings-toggle').addEventListener('click', function(event) {
+            event.stopPropagation();
+        });
+
+        function updateColors() {
+            const filledColor = document.getElementById('filledColor').value;
+            const borderColor = document.getElementById('emptyColor').value;
+            
+            // Save colors to localStorage
+            localStorage.setItem('yearTracker_filledColor', filledColor);
+            localStorage.setItem('yearTracker_borderColor', borderColor);
+            
+            const filledSquares = document.querySelectorAll('.day-square.filled');
+            const emptySquares = document.querySelectorAll('.day-square:not(.filled)');
+            
+            filledSquares.forEach(square => {
+                square.style.backgroundColor = filledColor;
+            });
+            
+            emptySquares.forEach(square => {
+                square.style.borderColor = borderColor;
+            });
+        }
+
+        function loadSavedColors() {
+            const savedFilledColor = localStorage.getItem('yearTracker_filledColor');
+            const savedBorderColor = localStorage.getItem('yearTracker_borderColor');
+            
+            if (savedFilledColor) {
+                document.getElementById('filledColor').value = savedFilledColor;
+            }
+            if (savedBorderColor) {
+                document.getElementById('emptyColor').value = savedBorderColor;
+            }
+            
+            // Apply the colors after loading
+            updateColors();
+        }
+
+        function isLeapYear(year) {
+            return (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+        }
+
+        function getDaysInYear(year) {
+            return isLeapYear(year) ? 366 : 365;
+        }
+
+        function getDayOfYear(date) {
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            return Math.floor(diff / oneDay);
+        }
+
+        function initializeTracker() {
+            const currentYear = new Date().getFullYear();
+            const currentDate = new Date();
+            const currentDayOfYear = getDayOfYear(currentDate);
+            const totalDaysInYear = getDaysInYear(currentYear);
+            
+            // Update stats
+            document.getElementById('daysPassed').textContent = currentDayOfYear;
+            document.getElementById('daysRemaining').textContent = totalDaysInYear - currentDayOfYear;
+            document.getElementById('percentComplete').textContent = Math.round((currentDayOfYear / totalDaysInYear) * 100) + '%';
+            
+            // Create year grid
+            createYearGrid(currentYear, currentDayOfYear, totalDaysInYear);
+        }
+
+        function createMonthLabels(year) {
+            const monthLabels = document.getElementById('monthLabels');
+            monthLabels.innerHTML = '';
+            
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                          'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Calculate which week each month starts
+            for (let month = 0; month < 12; month++) {
+                const firstDay = new Date(year, month, 1);
+                const dayOfYear = getDayOfYear(firstDay);
+                const weekIndex = Math.floor((dayOfYear - 1) / 7);
+                
+                if (weekIndex < 53) {
+                    const label = document.createElement('div');
+                    label.className = 'month-label';
+                    label.textContent = months[month];
+                    label.style.gridColumn = `${weekIndex + 1}`;
+                    monthLabels.appendChild(label);
+                }
+            }
+        }
+
+        function createYearGrid(year, currentDayOfYear, totalDaysInYear) {
+            const yearGrid = document.getElementById('yearGrid');
+            yearGrid.innerHTML = '';
+            
+            // Create 53 weeks worth of squares (371 total to cover any year)
+            for (let i = 1; i <= totalDaysInYear; i++) {
+                const square = document.createElement('div');
+                square.className = 'day-square';
+                
+                if (i <= currentDayOfYear) {
+                    square.classList.add('filled');
+                }
+                
+                // Add hover tooltip
+                const date = new Date(year, 0, i);
+                const dateString = date.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                square.title = dateString;
+                
+                yearGrid.appendChild(square);
+            }
+            
+            // Fill remaining grid slots to maintain layout (but hide them)
+            const remainingSlots = (53 * 7) - totalDaysInYear;
+            for (let i = 0; i < remainingSlots; i++) {
+                const square = document.createElement('div');
+                square.className = 'day-square';
+                square.style.opacity = '0';
+                square.style.border = 'none';
+                yearGrid.appendChild(square);
+            }
+        }
+
+        // Initialize on load
+        window.addEventListener('load', initializeTracker);
+        
+        // Update daily at midnight
+        setInterval(() => {
+            const now = new Date();
+            if (now.getHours() === 0 && now.getMinutes() === 0) {
+                initializeTracker();
+            }
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>
